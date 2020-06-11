@@ -1,0 +1,27 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="Stage2___FileAttributeSync.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="SourceSPOSiteURL" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">https://m365x938597.sharepoint.com/sites/sourceSite</Value>
+    </Setting>
+    <Setting Name="DocLibDisplayName" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">source1</Value>
+    </Setting>
+    <Setting Name="LisLibDisplayName" Type="System.String" Scope="Application">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="Office365Username" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">admin@M365x938597.onmicrosoft.com</Value>
+    </Setting>
+    <Setting Name="Office365Password" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">B5TBg8Q4KX</Value>
+    </Setting>
+    <Setting Name="MetadataFileExportLocation" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">c:\\export\\Allfiles.csv</Value>
+    </Setting>
+    <Setting Name="SPOQueryBatchSize" Type="System.Int32" Scope="Application">
+      <Value Profile="(Default)">100</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>
