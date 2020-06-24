@@ -61,7 +61,7 @@ namespace Stage2___FileAttributeSync.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("B5TBg8Q4KX")]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
         public string Office365Password {
             get {
                 return ((string)(this["Office365Password"]));
@@ -136,7 +136,7 @@ namespace Stage2___FileAttributeSync.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("8so49UBbHO")]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
         public string DestinationOffice365Password {
             get {
                 return ((string)(this["DestinationOffice365Password"]));

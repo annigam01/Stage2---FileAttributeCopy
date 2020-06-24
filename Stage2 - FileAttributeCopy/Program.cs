@@ -25,6 +25,7 @@ namespace Stage2___FileAttributeCopy
 
         private static void InitializeFile()
         {
+            //initilise the CSV file
             var exportFileNameWithPath = Settings.Default.MetadataFileExportLocation;
             string s = ("ItemID,FilePath,CreatedOn,CreatedBy,ModifiedOn,ModifiedBy" + Environment.NewLine);
             System.IO.File.AppendAllText(exportFileNameWithPath, s);
@@ -32,6 +33,8 @@ namespace Stage2___FileAttributeCopy
         
         private static void InitializePSFile()
         {
+            //initialise the PS file with required text
+
             string ps1_1 = "$filename = [System.IO.Path]::GetRandomFileName()";
             WriteToPSTempFiles(ps1_1);
 
@@ -56,6 +59,9 @@ namespace Stage2___FileAttributeCopy
         }
         private static void UpdateFilePropertyTEMP()
         {
+
+            //this func create a PS file, which when run with UPDATE gracefully all the file metadata to SPO
+
             string str = "Converting..Source Item to Destination";
             Console.WriteLine(str);
             Log(str);
@@ -81,10 +87,10 @@ namespace Stage2___FileAttributeCopy
 
                     var temp = item.Split(',');
                     var ID = temp[0];
-                    var FilePath = ConvertToDestinationRelativeURL(temp[1]);
+                    var FilePath = ConvertToDestinationRelativeURL(temp[1]); // call to convert SOURCE URL to DESTINATION URL
                     
                     DateTime.TryParse(temp[2], out spdate);
-                    var CreatedON = spdate.ToString("o");
+                    var CreatedON = spdate.ToString("o"); //convert to format that SPO likes
                     
                     
                     DateTime.TryParse(temp[4], out spdate);
@@ -130,7 +136,7 @@ namespace Stage2___FileAttributeCopy
 
                         string Fullcmd =PSCmd1+PSCmd2+PSCmd3+PSCmd4+PSCmd5+PSCmd6+PSCmd;
 
-                        WriteToPSTempFiles(Fullcmd);
+                        WriteToPSTempFiles(Fullcmd); // write to resulting SPO File
 
                     }
                     catch (Exception e)
@@ -148,6 +154,7 @@ namespace Stage2___FileAttributeCopy
 
         private static void WriteToPSTempFiles(string cmd)
         {
+            //writes the PS file
             System.IO.File.AppendAllText(Settings.Default.ProgramWorkingDir, cmd+Environment.NewLine);
         }
 
@@ -185,6 +192,7 @@ namespace Stage2___FileAttributeCopy
 
         private static void GetAllItemInBatch()
         {
+            //this func gets ALL the item in batch (configurable) from Source SPO list/library
             
             InitializeFile();
             bool ColorToggle = true;
