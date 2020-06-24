@@ -118,9 +118,6 @@ namespace Stage2___FileAttributeCopy
                         Console.ForegroundColor = ConsoleColor.Yellow;
                         Console.Write($"{ID}");
                         Console.ResetColor();
-
-
-
                         Console.Write($" with New Item:");
                         Console.ForegroundColor = ConsoleColor.Green;
                         Console.WriteLine($"{File1.ListItemAllFields.Id}");
@@ -140,7 +137,7 @@ namespace Stage2___FileAttributeCopy
 
                         string Fullcmd = PSCmd1 + PSCmd2 + PSCmd3 + PSCmd4 + PSCmd5 + PSCmd6 + PSCmd;
 
-                        WriteToPSTempFiles(Fullcmd); // write to resulting SPO File
+                        WriteToPSTempFiles(Fullcmd); // write to resulting PS File
 
                     }
                     catch (Exception e)
