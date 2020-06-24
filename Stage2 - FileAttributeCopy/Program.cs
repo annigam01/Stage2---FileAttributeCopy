@@ -12,9 +12,9 @@ namespace Stage2___FileAttributeCopy
         {
             Log("Starting program");
 
-            GetAllItemInBatch();
-            UpdateFilePropertyTEMP();
-            
+            GetAllItemInBatch(); // gets all items
+            UpdateFileProperty(); // updates all itesm via resulting PS script ( that user is prompted to run)
+
             var str = $"Finished! Open PS as admin and run the file {Settings.Default.ProgramWorkingDir}";
 
             Console.WriteLine(str);
@@ -26,11 +26,12 @@ namespace Stage2___FileAttributeCopy
         private static void InitializeFile()
         {
             //initilise the CSV file
-            var exportFileNameWithPath = Settings.Default.MetadataFileExportLocation;
+            var exportFileNameWithPath = Settings.Default.MetadataFileExportLocation; //read the settings in the config file
+
             string s = ("ItemID,FilePath,CreatedOn,CreatedBy,ModifiedOn,ModifiedBy" + Environment.NewLine);
             System.IO.File.AppendAllText(exportFileNameWithPath, s);
         }
-        
+
         private static void InitializePSFile()
         {
             //initialise the PS file with required text
@@ -46,8 +47,10 @@ namespace Stage2___FileAttributeCopy
 
             string ps1 = $@"$secStringPassword = ConvertTo-SecureString ""{Settings.Default.DestinationOffice365Password}"" -AsPlainText -Force";
             WriteToPSTempFiles(ps1);
+
             string ps2 = $@"; $credOject = New-Object System.Management.Automation.PSCredential (""{Settings.Default.DestinationOffice365Username}"", $secStringPassword)";
             WriteToPSTempFiles(ps2);
+
             string ps3 = $@"; Connect-PnPOnline -Url ""{Settings.Default.DestinationSPOSiteURL}"" -Credentials $credOject";
             WriteToPSTempFiles(ps3);
 
@@ -57,7 +60,7 @@ namespace Stage2___FileAttributeCopy
 
 
         }
-        private static void UpdateFilePropertyTEMP()
+        private static void UpdateFileProperty()
         {
 
             //this func create a PS file, which when run with UPDATE gracefully all the file metadata to SPO
@@ -66,7 +69,8 @@ namespace Stage2___FileAttributeCopy
             Console.WriteLine(str);
             Log(str);
 
-            InitializePSFile();
+            InitializePSFile(); // Add the basic code for PnP PS script file, login to right site, creds, start transcript etc
+
             var siteUrl = Settings.Default.DestinationSPOSiteURL;
             var doclib = Settings.Default.DestinationDocLibDisplayName;
             var uname = Settings.Default.DestinationOffice365Username;
@@ -88,34 +92,34 @@ namespace Stage2___FileAttributeCopy
                     var temp = item.Split(',');
                     var ID = temp[0];
                     var FilePath = ConvertToDestinationRelativeURL(temp[1]); // call to convert SOURCE URL to DESTINATION URL
-                    
+
                     DateTime.TryParse(temp[2], out spdate);
                     var CreatedON = spdate.ToString("o"); //convert to format that SPO likes
-                    
-                    
+
+
                     DateTime.TryParse(temp[4], out spdate);
                     var ModifiedON = spdate.ToString("o");
 
                     var CreatedBy = temp[3];
                     var ModifiedBy = temp[5];
 
-                    
+
                     try
                     {
-                        
-                        var File1 = clientContext.Web.GetFileByServerRelativeUrl(FilePath);
-                        
-                        clientContext.Load(File1,f=>f.ListItemAllFields.Id);
-                        
-                        clientContext.ExecuteQueryRetry(10, 500, "SPOMigration JOB");
 
-                        
+                        var File1 = clientContext.Web.GetFileByServerRelativeUrl(FilePath);
+
+                        clientContext.Load(File1, f => f.ListItemAllFields.Id);
+
+                        clientContext.ExecuteQueryRetry(10, 5000, "SPOMigration JOB"); //will retry in case of server busy for 10 times, will retry after 5 second gap, identitfy as this string or our services
+
+
                         Console.Write($"Sucessfully Converted. Old Item:");
                         Console.ForegroundColor = ConsoleColor.Yellow;
                         Console.Write($"{ID}");
                         Console.ResetColor();
 
-                        
+
 
                         Console.Write($" with New Item:");
                         Console.ForegroundColor = ConsoleColor.Green;
@@ -134,7 +138,7 @@ namespace Stage2___FileAttributeCopy
                         string PSCmd7 = $@"@{{""Created""=$Created; ""Modified""=$Modified; ""Author"" =$CreatedBy; ""Editor"" =$ModifiedBy; }}";
                         string PSCmd = string.Format(";Set-PnPListItem -List $ListName -Identity $itemid -Values {0}", PSCmd7);
 
-                        string Fullcmd =PSCmd1+PSCmd2+PSCmd3+PSCmd4+PSCmd5+PSCmd6+PSCmd;
+                        string Fullcmd = PSCmd1 + PSCmd2 + PSCmd3 + PSCmd4 + PSCmd5 + PSCmd6 + PSCmd;
 
                         WriteToPSTempFiles(Fullcmd); // write to resulting SPO File
 
@@ -144,18 +148,18 @@ namespace Stage2___FileAttributeCopy
                         Log($"FAILED TO Convert. Old Item:{ID}.");
                         Log($"{e.Message}");
                     }
-                
-               }
-                
+
+                }
+
             }
 
-            WriteToPSTempFiles("Stop-Transcript");
+            WriteToPSTempFiles("Stop-Transcript"); // PS transcription feature is OFF here, ON while initialising it
         }
 
         private static void WriteToPSTempFiles(string cmd)
         {
             //writes the PS file
-            System.IO.File.AppendAllText(Settings.Default.ProgramWorkingDir, cmd+Environment.NewLine);
+            System.IO.File.AppendAllText(Settings.Default.ProgramWorkingDir, cmd + Environment.NewLine);
         }
 
         private static void Log(string line)
@@ -169,9 +173,9 @@ namespace Stage2___FileAttributeCopy
         {
             string s1 = Settings.Default.SourceSPOSiteURL;
             string s2 = Settings.Default.DestinationSPOSiteURL;
-            
+
             Uri u1 = new Uri(s2);
-            
+
             if (s1.EndsWith("/"))
             {
                 s1 = s1.Remove(s1.Length - 1);
@@ -193,7 +197,7 @@ namespace Stage2___FileAttributeCopy
         private static void GetAllItemInBatch()
         {
             //this func gets ALL the item in batch (configurable) from Source SPO list/library
-            
+
             InitializeFile();
             bool ColorToggle = true;
 
@@ -221,7 +225,7 @@ namespace Stage2___FileAttributeCopy
                 { ColorToggle = true; }
 
                 toggleColor(ColorToggle);
-                    
+
 
                 CamlQuery camlQuery = new CamlQuery();
 
@@ -231,12 +235,12 @@ namespace Stage2___FileAttributeCopy
                     "<FieldRef Name='FileLeafRef'/><FieldRef Name='FileRef'/>" +
                     "<FieldRef Name='Created'/><FieldRef Name='Author'/>" +
                     "<FieldRef Name='Modified'/><FieldRef Name='Editor'/>" +
-                    "</ViewFields><RowLimit>"+SPOQueryBatchSize+"</RowLimit></View>";
+                    "</ViewFields><RowLimit>" + SPOQueryBatchSize + "</RowLimit></View>";
 
                 ListItemCollection collListItem = oList.GetItems(camlQuery);
 
                 clientContext.Load(collListItem);
-                
+
 
                 clientContext.ExecuteQuery();
 
@@ -260,12 +264,12 @@ namespace Stage2___FileAttributeCopy
                     string Editor = user.Email;
 
 
-                    string s = ($"Found - {oListItem.Id},{filename},{created},{author},{Modified},{Editor}"); 
+                    string s = ($"Found - {oListItem.Id},{filename},{created},{author},{Modified},{Editor}");
                     s = s + Environment.NewLine;
                     System.IO.File.AppendAllText(exportFileNameWithPath, s);
                     Console.WriteLine(s);
 
-                    
+
                 }
 
                 if (itemPosition == null)
@@ -280,7 +284,7 @@ namespace Stage2___FileAttributeCopy
 
         private static void toggleColor(bool State)
         {
-            
+
 
             if (State)
             {
