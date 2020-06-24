@@ -1,5 +1,5 @@
 ﻿<?xml version='1.0' encoding='utf-8'?>
-<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="Stage2___FileAttributeSync.Properties" GeneratedClassName="Settings">
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="Stage3_FileAttributeWriteToDestination.Properties" GeneratedClassName="Settings">
   <Profiles />
   <Settings>
     <Setting Name="SourceSPOSiteURL" Type="System.String" Scope="Application">
@@ -20,7 +20,7 @@
     <Setting Name="MetadataFileExportLocation" Type="System.String" Scope="Application">
       <Value Profile="(Default)">c:\\export\\source.csv</Value>
     </Setting>
-    <Setting Name="SPOQueryBatchSize" Type="System.Int32" Scope="Application">
+    <Setting Name="SPOQueryBatchSize" Type="System.String" Scope="Application">
       <Value Profile="(Default)">100</Value>
     </Setting>
     <Setting Name="DestinationSPOSiteURL" Type="System.String" Scope="User">
@@ -37,12 +37,6 @@
     </Setting>
     <Setting Name="DestinationOffice365Password" Type="System.String" Scope="User">
       <Value Profile="(Default)">8so49UBbHO</Value>
-    </Setting>
-    <Setting Name="ProgramWorkingDir" Type="System.String" Scope="User">
-      <Value Profile="(Default)">C:\migration\working\UpdatePS.ps1</Value>
-    </Setting>
-    <Setting Name="ProgramLogging" Type="System.String" Scope="User">
-      <Value Profile="(Default)">C:\migration\working\ProgramRun.log</Value>
     </Setting>
   </Settings>
 </SettingsFile>

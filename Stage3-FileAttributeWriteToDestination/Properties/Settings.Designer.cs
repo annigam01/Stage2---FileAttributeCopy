@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Stage2___FileAttributeSync.Properties {
+namespace Stage3_FileAttributeWriteToDestination.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
@@ -80,9 +80,9 @@ namespace Stage2___FileAttributeSync.Properties {
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("100")]
-        public int SPOQueryBatchSize {
+        public string SPOQueryBatchSize {
             get {
-                return ((int)(this["SPOQueryBatchSize"]));
+                return ((string)(this["SPOQueryBatchSize"]));
             }
         }
         
@@ -143,30 +143,6 @@ namespace Stage2___FileAttributeSync.Properties {
             }
             set {
                 this["DestinationOffice365Password"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("C:\\migration\\working\\UpdatePS.ps1")]
-        public string ProgramWorkingDir {
-            get {
-                return ((string)(this["ProgramWorkingDir"]));
-            }
-            set {
-                this["ProgramWorkingDir"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("C:\\migration\\working\\ProgramRun.log")]
-        public string ProgramLogging {
-            get {
-                return ((string)(this["ProgramLogging"]));
-            }
-            set {
-                this["ProgramLogging"] = value;
             }
         }
     }

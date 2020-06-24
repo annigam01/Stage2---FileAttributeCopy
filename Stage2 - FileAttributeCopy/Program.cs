@@ -1,14 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data.Services.Client;
-using System.Linq;
-using System.Runtime.Remoting.Contexts;
-using System.Security;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Online.SharePoint.Client;
-using Microsoft.SharePoint.Client;
+﻿using Microsoft.SharePoint.Client;
 using Stage2___FileAttributeSync.Properties;
+using System;
+using System.Security;
 using SP = Microsoft.SharePoint.Client;
 
 namespace Stage2___FileAttributeCopy
@@ -17,11 +10,16 @@ namespace Stage2___FileAttributeCopy
     {
         static void Main(string[] args)
         {
-            //GetAllItem();
-            InitializeFile();
+            Log("Starting program");
+
             GetAllItemInBatch();
+            UpdateFilePropertyTEMP();
             
-           
+            var str = $"Finished! Open PS as admin and run the file {Settings.Default.ProgramWorkingDir}";
+
+            Console.WriteLine(str);
+            Log(str);
+
             Console.ReadLine();
         }
 
@@ -31,9 +29,164 @@ namespace Stage2___FileAttributeCopy
             string s = ("ItemID,FilePath,CreatedOn,CreatedBy,ModifiedOn,ModifiedBy" + Environment.NewLine);
             System.IO.File.AppendAllText(exportFileNameWithPath, s);
         }
+        
+        private static void InitializePSFile()
+        {
+            string ps1_1 = "$filename = [System.IO.Path]::GetRandomFileName()";
+            WriteToPSTempFiles(ps1_1);
+
+            string ps1_2 = $@"$filename = ""PROGRESS_LOG_""+ $filename.Remove($filename.Length-4)+"".log""";
+            WriteToPSTempFiles(ps1_2);
+
+            string ps1_3 = $@"Start-Transcript -Path $filename -NoClobber";
+            WriteToPSTempFiles(ps1_3);
+
+            string ps1 = $@"$secStringPassword = ConvertTo-SecureString ""{Settings.Default.DestinationOffice365Password}"" -AsPlainText -Force";
+            WriteToPSTempFiles(ps1);
+            string ps2 = $@"; $credOject = New-Object System.Management.Automation.PSCredential (""{Settings.Default.DestinationOffice365Username}"", $secStringPassword)";
+            WriteToPSTempFiles(ps2);
+            string ps3 = $@"; Connect-PnPOnline -Url ""{Settings.Default.DestinationSPOSiteURL}"" -Credentials $credOject";
+            WriteToPSTempFiles(ps3);
+
+            string ps4 = $"Install-Module SharePointPnPPowerShellOnline";
+            WriteToPSTempFiles(ps4);
+
+
+
+        }
+        private static void UpdateFilePropertyTEMP()
+        {
+            string str = "Converting..Source Item to Destination";
+            Console.WriteLine(str);
+            Log(str);
+
+            InitializePSFile();
+            var siteUrl = Settings.Default.DestinationSPOSiteURL;
+            var doclib = Settings.Default.DestinationDocLibDisplayName;
+            var uname = Settings.Default.DestinationOffice365Username;
+            var pss = ConvertToSecureString(Settings.Default.DestinationOffice365Password);
+            var exportFileNameWithPath = Settings.Default.MetadataFileExportLocation;
+
+            ClientContext clientContext = new ClientContext(siteUrl);
+            clientContext.Credentials = new SharePointOnlineCredentials(uname, pss);
+
+            SP.List oList = clientContext.Web.Lists.GetByTitle(doclib);
+
+
+            foreach (var item in System.IO.File.ReadAllLines(Settings.Default.MetadataFileExportLocation))
+            {
+                if (!item.StartsWith("ItemID"))
+                {
+                    DateTime spdate = DateTime.Now;
+
+                    var temp = item.Split(',');
+                    var ID = temp[0];
+                    var FilePath = ConvertToDestinationRelativeURL(temp[1]);
+                    
+                    DateTime.TryParse(temp[2], out spdate);
+                    var CreatedON = spdate.ToString("o");
+                    
+                    
+                    DateTime.TryParse(temp[4], out spdate);
+                    var ModifiedON = spdate.ToString("o");
+
+                    var CreatedBy = temp[3];
+                    var ModifiedBy = temp[5];
+
+                    
+                    try
+                    {
+                        
+                        var File1 = clientContext.Web.GetFileByServerRelativeUrl(FilePath);
+                        
+                        clientContext.Load(File1,f=>f.ListItemAllFields.Id);
+                        
+                        clientContext.ExecuteQueryRetry(10, 500, "SPOMigration JOB");
+
+                        
+                        Console.Write($"Sucessfully Converted. Old Item:");
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.Write($"{ID}");
+                        Console.ResetColor();
+
+                        
+
+                        Console.Write($" with New Item:");
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.WriteLine($"{File1.ListItemAllFields.Id}");
+                        Console.ResetColor();
+
+                        Log($"Sucessfully Converted. Old Item:{ID} with New Item:{File1.ListItemAllFields.Id}");
+
+                        string PSCmd1 = $@"$ListName = ""{doclib}""";
+                        string PSCmd2 = $@"; $itemid = ""{File1.ListItemAllFields.Id}""";
+                        string PSCmd3 = $@"; $CreatedBy = ""{CreatedBy}""";
+                        string PSCmd4 = $@"; $ModifiedBy = ""{ModifiedBy}""";
+                        string PSCmd5 = $@"; $Created = ""{CreatedON}""";
+                        string PSCmd6 = $@"; $Modified = ""{ModifiedON}""";
+
+                        string PSCmd7 = $@"@{{""Created""=$Created; ""Modified""=$Modified; ""Author"" =$CreatedBy; ""Editor"" =$ModifiedBy; }}";
+                        string PSCmd = string.Format(";Set-PnPListItem -List $ListName -Identity $itemid -Values {0}", PSCmd7);
+
+                        string Fullcmd =PSCmd1+PSCmd2+PSCmd3+PSCmd4+PSCmd5+PSCmd6+PSCmd;
+
+                        WriteToPSTempFiles(Fullcmd);
+
+                    }
+                    catch (Exception e)
+                    {
+                        Log($"FAILED TO Convert. Old Item:{ID}.");
+                        Log($"{e.Message}");
+                    }
+                
+               }
+                
+            }
+
+            WriteToPSTempFiles("Stop-Transcript");
+        }
+
+        private static void WriteToPSTempFiles(string cmd)
+        {
+            System.IO.File.AppendAllText(Settings.Default.ProgramWorkingDir, cmd+Environment.NewLine);
+        }
+
+        private static void Log(string line)
+        {
+            string logstr = DateTime.Now.ToString() + $" {line}";
+            System.IO.File.AppendAllText(Settings.Default.ProgramLogging, logstr + Environment.NewLine);
+
+        }
+
+        private static string ConvertToDestinationRelativeURL(string filePath)
+        {
+            string s1 = Settings.Default.SourceSPOSiteURL;
+            string s2 = Settings.Default.DestinationSPOSiteURL;
+            
+            Uri u1 = new Uri(s2);
+            
+            if (s1.EndsWith("/"))
+            {
+                s1 = s1.Remove(s1.Length - 1);
+            }
+
+            if (s2.EndsWith("/"))
+            {
+                s2 = s1.Remove(s1.Length - 1);
+            }
+
+            string oldsite = s1.Split('/')[4];
+            string newsite = s2.Split('/')[4];
+
+            return filePath.Replace(oldsite, newsite).Replace(Settings.Default.DocLibDisplayName, Settings.Default.DestinationDocLibDisplayName);
+
+
+        }
 
         private static void GetAllItemInBatch()
         {
+            
+            InitializeFile();
             bool ColorToggle = true;
 
             var siteUrl = Settings.Default.SourceSPOSiteURL;
@@ -42,6 +195,8 @@ namespace Stage2___FileAttributeCopy
             var pss = ConvertToSecureString(Settings.Default.Office365Password);
             var exportFileNameWithPath = Settings.Default.MetadataFileExportLocation;
             var SPOQueryBatchSize = Settings.Default.SPOQueryBatchSize;
+
+            Console.WriteLine($"Connecting to Source SPO Site {siteUrl} as user {uname} {Environment.NewLine}");
 
             ClientContext clientContext = new ClientContext(siteUrl);
             clientContext.Credentials = new SharePointOnlineCredentials(uname, pss);
@@ -86,16 +241,18 @@ namespace Stage2___FileAttributeCopy
                     string created = oListItem["Created"].ToString();
 
                     FieldUserValue user = (FieldUserValue)oListItem["Author"];
-                    string author = user.LookupValue;
+                    //string author = user.LookupValue;
+                    string author = user.Email;
 
                     string Modified = oListItem["Modified"].ToString();
                     user = null;
 
                     user = (FieldUserValue)oListItem["Editor"];
-                    string Editor = user.LookupValue;
+                    //string Editor = user.LookupValue;
+                    string Editor = user.Email;
 
 
-                    string s = ($" {oListItem.Id},{filename},{created},{author},{Modified},{Editor}"); 
+                    string s = ($"Found - {oListItem.Id},{filename},{created},{author},{Modified},{Editor}"); 
                     s = s + Environment.NewLine;
                     System.IO.File.AppendAllText(exportFileNameWithPath, s);
                     Console.WriteLine(s);
@@ -127,70 +284,6 @@ namespace Stage2___FileAttributeCopy
             }
         }
 
-        private static void GetAllItem()
-        {
-            var siteurl = "https://m365x938597.sharepoint.com/sites/sourceSite";
-            var doclib = "source1";
-            var uname = "admin@M365x938597.onmicrosoft.com";
-            var unsecurePss = "B5TBg8Q4KX";
-            var pss = ConvertToSecureString(unsecurePss);
-
-            try
-            {
-                using (ClientContext ctx = new ClientContext(siteurl))
-                {
-                    ctx.Credentials = new SharePointOnlineCredentials(uname, pss);
-
-                    List l = ctx.Web.GetListByTitle(doclib);
-                    ctx.Load(l);
-
-
-                    ListItemCollection LI = l.GetItems(CamlQuery.CreateAllItemsQuery());
-                    ctx.Load(LI, eachItem => eachItem.Include(
-                                                    item => item.Id,
-                                                    item => item["FileRef"],
-                                                    item => item["FileLeafRef"],
-                                                    item => item.Folder.ServerRelativeUrl,
-                                                    item => item["Created"],
-                                                    item => item["Author"],
-                                                    item => item["Modified"],
-                                                    item => item["Editor"]));
-
-                    ctx.ExecuteQueryRetry();
-
-                    foreach (var item in LI.ToArray())
-                    {
-                        string filename = item["FileRef"].ToString();
-
-                        string created = item["Created"].ToString();
-
-                        FieldUserValue user = (FieldUserValue)item["Author"];
-                        string author = user.LookupValue;
-
-                        string Modified = item["Modified"].ToString();
-                        user = null;
-
-                        user = (FieldUserValue)item["Editor"];
-                        string Editor = user.LookupValue;
-
-
-                        string s = ($" {item.Id} {filename} {created} {author} {Modified} {Editor}");
-                        s = s + Environment.NewLine;
-                        System.IO.File.AppendAllText("c:\\export\\Allfiles.txt", s);
-                        Console.WriteLine(s);
-                    }
-
-
-
-                }
-            }
-            catch (Exception E)
-            {
-
-                Console.WriteLine(E.InnerException);
-            }
-            Console.ReadLine();
-        }
         private static SecureString ConvertToSecureString(string strPassword)
         {
             var secureStr = new SecureString();
